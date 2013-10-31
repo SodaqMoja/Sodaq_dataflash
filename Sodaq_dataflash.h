@@ -26,7 +26,7 @@
 #define DF_AT45DB081D   1
 #define DF_AT45DB161D   2
 
-#define DF_VARIANT      DF_AT45DB081D
+#define DF_VARIANT      DF_AT45DB161D
 
 #if DF_VARIANT == DF_AT45DB081D
 // configuration for the Atmel AT45DB081D device, Sodaq v2 has AT45DB081D, see doc3596.pdf, 4096 pages of 256/264 bytes
