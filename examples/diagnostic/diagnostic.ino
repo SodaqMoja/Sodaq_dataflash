@@ -32,16 +32,16 @@
 #include <Sodaq_dataflash.h>
 
 //#########   pin definitions   ########
-#define GPRSBEE_PWRPIN  8
-#define XBEECTS_PIN     9
+#define GPRSBEE_PWRPIN  7
+#define XBEECTS_PIN     8
 
-#define DIAGPORT_RX     10
-#define DIAGPORT_TX     11
+#define DIAGPORT_RX     4
+#define DIAGPORT_TX     5
 
-#define DF_MOSI         16
-#define DF_MISO         14
-#define DF_SPICLOCK     15
-#define DF_SLAVESELECT  12
+#define DF_MOSI         11
+#define DF_MISO         12
+#define DF_SPICLOCK     13
+#define DF_SLAVESELECT  10
 
 
 //#########   diagnostic    #############
