@@ -64,7 +64,7 @@ void setup()
 {
 
   dflash.init(DF_MISO, DF_MOSI, DF_SPICLOCK, DF_SLAVESELECT);
-
+  Serial.begin(9600);
   rtc.begin();
 }
 
