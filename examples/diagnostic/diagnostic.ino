@@ -20,15 +20,12 @@
 
 /*
  * This is an example to show the working of Sodaq_dataflash.  It can
- * also be used as a utility to diagnose the dataflash.
+ * also be used as the start of a utility to diagnose the dataflash.
  */
 
 #include <Arduino.h>
-#include <avr/wdt.h>
 
 #include <SoftwareSerial.h>
-#include <Wire.h>
-#include <Sodaq_DS3231.h>
 #include <Sodaq_dataflash.h>
 
 //#########   pin definitions   ########
@@ -45,7 +42,7 @@
 
 
 //#########   diagnostic    #############
-// Uncomment or make it an #undef to disable diagnostic output
+// Comment or make it an #undef to disable diagnostic output
 #define ENABLE_DIAG     1
 
 #ifdef ENABLE_DIAG
@@ -62,10 +59,11 @@
 //#########    setup        #############
 void setup()
 {
+#ifdef ENABLE_DIAG
+  Serial.begin(57600);
+#endif
 
   dflash.init(DF_MISO, DF_MOSI, DF_SPICLOCK, DF_SLAVESELECT);
-
-  rtc.begin();
 }
 
 void loop()
@@ -121,6 +119,8 @@ end:
 void getCommand()
 {
   char line[100];
+  char *ptr;
+  uint32_t value;
 
   Serial.print("> ");
   readLine(line, sizeof(line));
@@ -132,20 +132,42 @@ void getCommand()
     DIAGPRINTLN(" done");
 
   } else if (line[0] == 'D' || line[0] == 'd') {
-    int page = strtol(line + 1, NULL, 0);
-    dumpPage(page);
+    ptr = line + 1;
+    if (getUValue(ptr, &value)) {
+      int page = value;
+      dumpPage(page);
+    }
 
   } else if (line[0] == 'E' || line[0] == 'e') {
-    int page = strtol(line + 1, NULL, 0);
-    dflash.pageErase(page);
+    ptr = line + 1;
+    if (getUValue(ptr, &value)) {
+      int page = value;
+      dflash.pageErase(page);
+    }
 
   } else if (strncasecmp(line, "1w", 2) == 0) {
-    int page = strtol(line + 2, NULL, 0);
-    writePage(page, 1);
+    ptr = line + 2;
+    if (getUValue(ptr, &value)) {
+      int page = value;
+      writePage(page, 1);
+    }
   } else if (strncasecmp(line, "3w", 2) == 0) {
-    int page = strtol(line + 2, NULL, 0);
-    writePage(page, 3);
+    ptr = line + 2;
+    if (getUValue(ptr, &value)) {
+      int page = value;
+      writePage(page, 3);
+    }
   }
+}
+
+bool getUValue(const char *buffer, uint32_t * value)
+{
+  char *ptr;
+  *value = strtoul(buffer, &ptr, 0);
+  if (ptr != buffer) {
+    return true;
+  }
+  return false;
 }
 
 
@@ -186,6 +208,9 @@ void dumpBuffer(uint8_t * buf, size_t size)
   }
 }
 
+// This is just an example that writes a few bytes
+// to the flash page. Notice that the Buf1 isn't cleared
+// nor filled with the previous contents of the flash page
 void writePage(int page, uint8_t value)
 {
   uint8_t buffer[100];
@@ -195,4 +220,3 @@ void writePage(int page, uint8_t value)
   dflash.writeStrBuf1(0, buffer, sizeof(buffer));
   dflash.writeBuf1ToPage(page);
 }
-
