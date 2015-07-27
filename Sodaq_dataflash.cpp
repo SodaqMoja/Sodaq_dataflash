@@ -25,6 +25,7 @@
 
 #include <inttypes.h>
 #include <Arduino.h>
+#include <SPI.h>
 
 #include "Sodaq_dataflash.h"
 
@@ -46,29 +47,21 @@
 #define Buf2Write               0x87    // Buffer 2 write
 
 
-void Sodaq_Dataflash::init(uint8_t misoPin, uint8_t mosiPin, uint8_t sckPin, uint8_t ssPin)
+void Sodaq_Dataflash::init(uint8_t ssPin)
 {
   // setup the slave select pin
   _ssPin = ssPin;
   pinMode(_ssPin, OUTPUT);
 
-  // setup the SPI pins
-  pinMode(mosiPin, OUTPUT); // MOSI
-  pinMode(misoPin, INPUT);  // MISO
-  pinMode(sckPin, OUTPUT); // SCK
+  // Call the standard SPI initialisation
+  SPI.begin();
 
-  // Start with disabled SPI device
-  digitalWrite(_ssPin, HIGH);
-
-  // configure the SPI registers
-  SPCR = _BV(SPE) | _BV(MSTR);
+  //If the SPSR register exists
+  //Set the high speed bit
+#ifdef SPSR
   SPSR = _BV(SPI2X);
-#if 0
-  // TODO Do we need this?
-  // clear the SPI registers
-  clr = SPSR;
-  clr = SPDR;
 #endif
+
 #if DF_VARIANT == DF_AT45DB081D
   _pageAddrShift = 1;
 #elif DF_VARIANT == DF_AT45DB161D
@@ -76,12 +69,15 @@ void Sodaq_Dataflash::init(uint8_t misoPin, uint8_t mosiPin, uint8_t sckPin, uin
 #endif
 }
 
+void Sodaq_Dataflash::init(uint8_t misoPin, uint8_t mosiPin, uint8_t sckPin, uint8_t ssPin)
+{
+  init(ssPin);
+}
+
 uint8_t Sodaq_Dataflash::transmit(uint8_t data)
 {
-  SPDR = data; // Start the transmission
-  while (!(SPSR & (1 << SPIF))) { // Wait the end of the transmission
-  }
-  return SPDR;
+  // Call the standard SPI transfer method
+  return SPI.transfer(data);
 }
 
 uint8_t Sodaq_Dataflash::readStatus()
