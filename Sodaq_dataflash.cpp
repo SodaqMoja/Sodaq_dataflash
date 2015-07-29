@@ -49,18 +49,16 @@
 
 void Sodaq_Dataflash::init(uint8_t ssPin)
 {
-  // setup the slave select pin
+  // Setup the slave select pin
   _ssPin = ssPin;
-  pinMode(_ssPin, OUTPUT);
+  
+  // This is only needed for non SS
+  if (_ssPin != SS) {
+    pinMode(_ssPin, OUTPUT);
+  }
 
   // Call the standard SPI initialisation
   SPI.begin();
-
-  //If the SPSR register exists
-  //Set the high speed bit
-#ifdef SPSR
-  SPSR = _BV(SPI2X);
-#endif
 
 #if DF_VARIANT == DF_AT45DB081D
   _pageAddrShift = 1;
@@ -223,12 +221,19 @@ void Sodaq_Dataflash::chipErase()
   waitTillReady();
 }
 
+void Sodaq_Dataflash::settings(SPISettings settings)
+{
+  _settings = settings;
+}
+
 void Sodaq_Dataflash::deactivate()
 {
     digitalWrite(_ssPin,HIGH);
+    SPI.endTransaction();
 }
 void Sodaq_Dataflash::activate()
 {
+    SPI.beginTransaction(_settings);
     digitalWrite(_ssPin,LOW);
 }
 
