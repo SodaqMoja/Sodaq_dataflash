@@ -63,7 +63,7 @@ class Sodaq_Dataflash
 {
 public:
   void init(uint8_t csPin=SS);
-  void init(uint8_t misoPin, uint8_t mosiPin, uint8_t sckPin, uint8_t ssPin);
+  void init(uint8_t misoPin, uint8_t mosiPin, uint8_t sckPin, uint8_t ssPin) __attribute__((deprecated("Use: void init(uint8_t csPin=SS)")));
   void readID(uint8_t *data);
   void readSecurityReg(uint8_t *data, size_t size);
 
