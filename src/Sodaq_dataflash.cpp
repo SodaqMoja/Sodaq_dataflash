@@ -52,14 +52,11 @@ void Sodaq_Dataflash::init(uint8_t csPin)
   // Setup the slave select pin
   _csPin = csPin;
   
-  // This is only needed for CS
-  // on another pin than SS
-  if (_csPin != SS) {
-    pinMode(_csPin, OUTPUT);
-  }
-
   // Call the standard SPI initialisation
   SPI.begin();
+
+  // This is used when CS != SS
+  pinMode(_csPin, OUTPUT);
 
 #if DF_VARIANT == DF_AT45DB081D
   _pageAddrShift = 1;
