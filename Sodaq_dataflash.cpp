@@ -47,14 +47,15 @@
 #define Buf2Write               0x87    // Buffer 2 write
 
 
-void Sodaq_Dataflash::init(uint8_t ssPin)
+void Sodaq_Dataflash::init(uint8_t csPin)
 {
   // Setup the slave select pin
-  _ssPin = ssPin;
+  _csPin = csPin;
   
-  // This is only needed for non SS
-  if (_ssPin != SS) {
-    pinMode(_ssPin, OUTPUT);
+  // This is only needed for CS
+  // on another pin than SS
+  if (_csPin != SS) {
+    pinMode(_csPin, OUTPUT);
   }
 
   // Call the standard SPI initialisation
@@ -228,13 +229,13 @@ void Sodaq_Dataflash::settings(SPISettings settings)
 
 void Sodaq_Dataflash::deactivate()
 {
-    digitalWrite(_ssPin,HIGH);
+    digitalWrite(_csPin,HIGH);
     SPI.endTransaction();
 }
 void Sodaq_Dataflash::activate()
 {
     SPI.beginTransaction(_settings);
-    digitalWrite(_ssPin,LOW);
+    digitalWrite(_csPin,LOW);
 }
 
 void Sodaq_Dataflash::setPageAddr(unsigned int pageAddr)

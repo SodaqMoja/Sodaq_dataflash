@@ -62,7 +62,7 @@
 class Sodaq_Dataflash
 {
 public:
-  void init(uint8_t ssPin=SS);
+  void init(uint8_t csPin=SS);
   void init(uint8_t misoPin, uint8_t mosiPin, uint8_t sckPin, uint8_t ssPin);
   void readID(uint8_t *data);
   void readSecurityReg(uint8_t *data, size_t size);
@@ -91,7 +91,7 @@ private:
   uint8_t getPageAddrByte1(uint16_t pageAddr);
   uint8_t getPageAddrByte2(uint16_t pageAddr);
 
-  uint8_t _ssPin;
+  uint8_t _csPin;
   size_t _pageAddrShift;
   SPISettings _settings;
 };
