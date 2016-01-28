@@ -24,46 +24,24 @@
  */
 
 #include <Arduino.h>
-
-#include <SoftwareSerial.h>
+#include <SPI.h>
 #include <Sodaq_dataflash.h>
 
-//#########   pin definitions   ########
-#define GPRSBEE_PWRPIN  7
-#define XBEECTS_PIN     8
-
-#define DIAGPORT_RX     4
-#define DIAGPORT_TX     5
-
-#define DF_MOSI         11
-#define DF_MISO         12
-#define DF_SPICLOCK     13
-#define DF_SLAVESELECT  10
-
-
-//#########   diagnostic    #############
-// Comment or make it an #undef to disable diagnostic output
-#define ENABLE_DIAG     1
-
-#ifdef ENABLE_DIAG
-#define DIAGPRINT(...)          Serial.print(__VA_ARGS__)
-#define DIAGPRINTLN(...)        Serial.println(__VA_ARGS__)
-#else
-#define DIAGPRINT(...)
-#define DIAGPRINTLN(...)
-#endif
-
-
 //######### forward declare #############
+static inline bool isTimedOut(uint32_t ts);
+void readLine(char *line, size_t size);
+void getCommand();
+bool getUValue(const char *buffer, uint32_t * value);
+void dumpPage(int page);
+void dumpBuffer(uint8_t * buf, size_t size);
+void writePage(int page, uint8_t value);
 
 //#########    setup        #############
 void setup()
 {
-#ifdef ENABLE_DIAG
   Serial.begin(57600);
-#endif
 
-  dflash.init(DF_MISO, DF_MOSI, DF_SPICLOCK, DF_SLAVESELECT);
+  dflash.init(SS);
 }
 
 void loop()
@@ -127,9 +105,9 @@ void getCommand()
   Serial.println();
   if (*line == '\0') {
   } else if (strcmp(line, "E Y") == 0) {
-    DIAGPRINT("DF chip erase ...");
+    Serial.print("DF chip erase ...");
     dflash.chipErase();
-    DIAGPRINTLN(" done");
+    Serial.println(" done");
 
   } else if (line[0] == 'D' || line[0] == 'd') {
     ptr = line + 1;
@@ -179,7 +157,7 @@ void dumpPage(int page)
   if (page < 0)
     return;
 
-  DIAGPRINT("page "); DIAGPRINTLN(page);
+  Serial.print("page "); Serial.println(page);
   dflash.readPageToBuf1(page);
   uint8_t buffer[16];
   for (uint16_t i = 0; i < DF_PAGE_SIZE; i += sizeof(buffer)) {
@@ -199,11 +177,11 @@ void dumpBuffer(uint8_t * buf, size_t size)
     size_t size1 = size >= 16 ? 16 : size;
     for (size_t j = 0; j < size1; j++) {
       // Silly Arduino Print has very limited formatting capabilities
-      DIAGPRINT((*buf >> 4) & 0xF, HEX);        // High nibble
-      DIAGPRINT(*buf & 0xF, HEX);               // Low nibble
+      Serial.print((*buf >> 4) & 0xF, HEX);        // High nibble
+      Serial.print(*buf & 0xF, HEX);               // Low nibble
       buf++;
     }
-    DIAGPRINTLN();
+    Serial.println();
     size -= size1;
   }
 }
