@@ -23,7 +23,7 @@
  * and others.
  */
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -51,7 +51,7 @@ void Sodaq_Dataflash::init(uint8_t csPin)
 {
   // Setup the slave select pin
   _csPin = csPin;
-  
+
   // Call the standard SPI initialisation
   SPI.begin();
 

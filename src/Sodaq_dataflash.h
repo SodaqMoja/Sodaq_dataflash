@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <SPI.h>
 
 #define DF_AT45DB081D   1
 #define DF_AT45DB161D   2
