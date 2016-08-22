@@ -26,10 +26,11 @@
 
 #define DF_AT45DB081D   1
 #define DF_AT45DB161D   2
-// Adding AT45DB041D:
-#define DF_AT45DB161D   3
+#define DF_AT45DB041D   3
 
-#define DF_VARIANT      DF_AT45DB161D
+#ifndef DF_VARIANT
+#define DF_VARIANT DF_AT45DB161D
+#endif
 
 #if DF_VARIANT == DF_AT45DB081D
 // configuration for the Atmel AT45DB081D device, Sodaq v2 has AT45DB081D, see doc3596.pdf, 4096 pages of 256/264 bytes
@@ -57,7 +58,6 @@
  *    be written and 10 don’t care bits."
  */
 
-// Adding AT45DB041D:
 #elif DF_VARIANT == DF_AT45DB041D
 // configuration for the Atmel AT45DB041D device
 #define DF_PAGE_ADDR_BITS       11

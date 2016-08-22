@@ -62,7 +62,6 @@ void Sodaq_Dataflash::init(uint8_t csPin)
   _pageAddrShift = 1;
 #elif DF_VARIANT == DF_AT45DB161D
   _pageAddrShift = 1;
-// Adding AT45DB041D:
 #elif DF_VARIANT == DF_AT45DB041D
   _pageAddrShift = 1;
 #endif
