@@ -26,8 +26,11 @@
 
 #define DF_AT45DB081D   1
 #define DF_AT45DB161D   2
+#define DF_AT45DB041D   3
 
-#define DF_VARIANT      DF_AT45DB161D
+#ifndef DF_VARIANT
+#define DF_VARIANT DF_AT45DB161D
+#endif
 
 #if DF_VARIANT == DF_AT45DB081D
 // configuration for the Atmel AT45DB081D device, Sodaq v2 has AT45DB081D, see doc3596.pdf, 4096 pages of 256/264 bytes
@@ -53,6 +56,19 @@
  *    followed by three address bytes consist of 2 don’t care bits, 12 page
  *    address bits (PA11 - PA0) that specify the page in the main memory to
  *    be written and 10 don’t care bits."
+ */
+
+#elif DF_VARIANT == DF_AT45DB041D
+// configuration for the Atmel AT45DB041D device
+#define DF_PAGE_ADDR_BITS       11
+#define DF_PAGE_SIZE            264
+#define DF_PAGE_BITS            9
+/*
+ * From AT45DB041D documentation
+ *   "For the DataFlash standard page size (264-bytes), the opcode must be
+ *   followed by three address bytes consist of four don’t care bits, 11 page
+ *   address bits (PA10 - PA0) that specify the page in the main memory to
+ *   be written and nine don’t care bits."
  */
 
 #else
