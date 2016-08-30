@@ -24,5 +24,4 @@ Sodaq Moja has an on board AT45DB161D.  An earlier
 development board Sodaq V2 has an AT45DB081D.  If
 you disable the chip-detection, you may
 want to check Sodaq_dataflash.h and verify that the
-correct variant of the AT45DB is selected.  Perhaps
-someday we can detect this dynamically.
+correct variant of the AT45DB is selected.
