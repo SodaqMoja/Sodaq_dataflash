@@ -30,24 +30,57 @@
 #include "Sodaq_dataflash.h"
 
 //Dataflash commands
-#define FlashPageRead           0xD2    // Main memory page read
-#define StatusReg               0xD7    // Status register
-#define ReadMfgID               0x9F    // Read Manufacturer and Device ID
-#define PageErase               0x81    // Page erase
-#define ReadSecReg              0x77    // Read Security Register
+#define FlashPageRead                0xD2     // Main memory page read
+#define StatusReg                    0xD7     // Status register
+#define ReadMfgID                    0x9F     // Read Manufacturer and Device ID
+#define PageErase                    0x81     // Page erase
+#define ReadSecReg                   0x77     // Read Security Register
 
-#define FlashToBuf1Transfer     0x53    // Main memory page to buffer 1 transfer
-#define Buf1Read                0xD4    // Buffer 1 read
-#define Buf1ToFlashWE           0x83    // Buffer 1 to main memory page program with built-in erase
-#define Buf1Write               0x84    // Buffer 1 write
+#define FlashToBuf1Transfer          0x53     // Main memory page to buffer 1 transfer
+#define Buf1Read                     0xD4     // Buffer 1 read
+#define Buf1ToFlashWE                0x83     // Buffer 1 to main memory page program with built-in erase
+#define Buf1Write                    0x84     // Buffer 1 write
 
-#define FlashToBuf2Transfer     0x55    // Main memory page to buffer 2 transfer
-#define Buf2Read                0xD6    // Buffer 2 read
-#define Buf2ToFlashWE           0x86    // Buffer 2 to main memory page program with built-in erase
-#define Buf2Write               0x87    // Buffer 2 write
+#define FlashToBuf2Transfer          0x55     // Main memory page to buffer 2 transfer
+#define Buf2Read                     0xD6     // Buffer 2 read
+#define Buf2ToFlashWE                0x86     // Buffer 2 to main memory page program with built-in erase
+#define Buf2Write                    0x87     // Buffer 2 write
 
+//Chip identity values
+#define Manufacturer                 0x1F     // First byte from readID()
+#define Family_shiftbits                5     // 3 first bits of second byte
+#define Family_DF                    0x01     // Value of 3 bits shiftet right equal to 0x01 is DataFlash
+#define Density_mask                 0x0F     // 4 last bits of second byte (Fifth bit is not used)
+#define Density_1Mb                  0x02     // AT45DB011D
+#define Density_2Mb                  0x03     // AT45DB021D
+#define Density_4Mb                  0x04     // AT45DB041D
+#define Density_8Mb                  0x05     // AT45DB081D
+#define Density_16Mb                 0x06     // AT45DB161D
+#define Density_32Mb                 0x07     // AT45DB321D
+#define Density_64Mb                 0x08     // AT45DB642D
+#define Detection_off                0x00     // Return value for df_page_addr_bits(),
+                                              // df_page_size_array() and df_page_bits_array()
+#define Manufacturer_not_detected    0xFD     // Return value for chipdetect()
+#define Family_not_detected          0xFE     // Return value for chipdetect()
+#define Density_not_detected         0xFF     // Return value for chipdetect()
 
-void Sodaq_Dataflash::init(uint8_t csPin)
+// Translate density to DF_PAGE_ADDR_BITS format
+// Density                                                    2    3    4    5    6    7     8
+const uint8_t Sodaq_Dataflash::df_page_addr_bits_array[] = {  9,  10,  11,  12,  12,  13,   13};
+
+// Translate density to DF_PAGE_SIZE format
+// Density                                                    2    3    4    5    6    7     8
+const uint16_t Sodaq_Dataflash::df_page_size_array[] =     {264, 264, 264, 264, 528, 528, 1056};
+
+// Translate density to DF_PAGE_BITS format
+// Density                                                    2    3    4    5    6    7     8
+const uint8_t Sodaq_Dataflash::df_page_bits_array[] =      {  9,   9,   9,   9,  10,  10,   11};
+
+bool Sodaq_Dataflash::willdetect = true;            // Chip detection true by default
+uint8_t Sodaq_Dataflash::dfpagebits = DF_PAGE_BITS; // Initialized for detect == false
+uint8_t Sodaq_Dataflash::chip;                      // Density
+
+uint8_t Sodaq_Dataflash::init(uint8_t csPin)
 {
   // Setup the slave select pin
   _csPin = csPin;
@@ -58,19 +91,37 @@ void Sodaq_Dataflash::init(uint8_t csPin)
   // This is used when CS != SS
   pinMode(_csPin, OUTPUT);
 
+  // Do not run chipdetect if detect == false
+  if (willdetect == true) {
+    if ((chip = chipdetect()) > 0x08) {
+      return(chip); // Return not_detected code
+    }
+    dfpagebits = df_page_bits(); // Lookup page bits in array
+  }
+
 #if DF_VARIANT == DF_AT45DB081D
-  _pageAddrShift = 1;
+  _pageAddrShift = 1;              // _pageAddrShift set to 1, but not used
 #elif DF_VARIANT == DF_AT45DB161D
   _pageAddrShift = 1;
 #elif DF_VARIANT == DF_AT45DB041D
   _pageAddrShift = 1;
 #endif
+
+return(0); //Chip detected or chipdetect not run
 }
 
-void Sodaq_Dataflash::init(uint8_t misoPin, uint8_t mosiPin, uint8_t sckPin, uint8_t ssPin)
+uint8_t Sodaq_Dataflash::init(uint8_t misoPin, uint8_t mosiPin, uint8_t sckPin, uint8_t ssPin)
 {
-  init(ssPin);
+  return (init(ssPin));
 }
+
+// Interface to set chip detection to true or false
+uint8_t Sodaq_Dataflash::init(uint8_t ssPin, bool detect)
+{ 
+  willdetect = detect;
+  return (init(ssPin));
+}
+
 
 uint8_t Sodaq_Dataflash::transmit(uint8_t data)
 {
@@ -258,27 +309,81 @@ void Sodaq_Dataflash::setPageAddr(unsigned int pageAddr)
  *    address bits (PA11 - PA0) that specify the page in the main memory to
  *    be written and 10 don’t care bits."
  */
-/*
- * From the AT45DB041D documentation
- *   "For the DataFlash standard page size (264-bytes), the opcode must be
- *   followed by three address bytes consist of four don’t care bits, 11 page
- *   address bits (PA10 - PA0) that specify the page in the main memory to
- *   be written and nine don’t care bits."
- */
 uint8_t Sodaq_Dataflash::getPageAddrByte0(uint16_t pageAddr)
 {
   // More correct would be to use a 24 bits number
   // shift to the left by number of bits. But the uint16_t can be considered
   // as if it was already shifted by 8.
-  return (pageAddr << (DF_PAGE_BITS - 8)) >> 8;
+  return (pageAddr << (dfpagebits - 8)) >> 8;
 }
 uint8_t Sodaq_Dataflash::getPageAddrByte1(uint16_t page)
 {
-  return page << (DF_PAGE_BITS - 8);
+  return page << (dfpagebits - 8);
 }
 uint8_t Sodaq_Dataflash::getPageAddrByte2(uint16_t page)
 {
   return 0;
+}
+
+// Returns density of chip or error codes
+uint8_t Sodaq_Dataflash::chipdetect()
+{
+  uint8_t chipid[4];
+  /*
+   * All chips use the same mechanism for identification. From the datasheets:
+   *   "The identification method and the command opcode comply with the JEDEC standard for
+   *   “Manufacturer and Device ID Read Methodology for SPI Compatible Serial Interface Memory
+   *   Devices”. The type of information that can be read from the device includes the JEDEC
+   *   defined Manufacturer ID, the vendor specific Device ID, and the vendor specific Extended 
+   *   Device Information."
+   */
+  readID(chipid); // Should work for all chips
+  if (chipid[0] == Manufacturer) {
+    if (chipid[1] >> Family_shiftbits == Family_DF) {
+      uint8_t density = chipid[1] & Density_mask;
+      if (density == Density_1Mb || density == Density_2Mb || density == Density_4Mb ||
+        density == Density_8Mb || density == Density_16Mb || density == Density_32Mb ||
+        density == Density_64Mb) {
+        return density;
+      }
+      else {
+        return Density_not_detected;
+      }
+    }
+    else {
+      return Family_not_detected;
+    }
+  }
+  else {
+    return Manufacturer_not_detected;
+  }
+}
+
+// Returns detected chips DF_PAGE_ADDR_BITS
+uint8_t Sodaq_Dataflash::df_page_addr_bits()
+{
+  if (willdetect == true) {
+    return df_page_addr_bits_array[chip - 2]; // Lookup page address bits in array
+  }
+  return Detection_off;
+}
+
+// Returns detected chips DF_PAGE_SIZE
+uint16_t Sodaq_Dataflash::df_page_size()
+{
+  if (willdetect == true) {
+    return df_page_size_array[chip - 2];      // Lookup page size in array
+  }
+  return Detection_off;
+}
+
+// Returns detected chips DF_PAGE_BITS
+uint8_t Sodaq_Dataflash::df_page_bits()
+{
+  if (willdetect == true) {
+    return df_page_bits_array[chip - 2];      // Lookup page bits in array
+  }
+  return Detection_off;
 }
 
 // Use a single common instance
