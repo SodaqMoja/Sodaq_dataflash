@@ -11,7 +11,7 @@ disabled by the init() function.
 
 It is possible to #define the chip in your code
 (detection disabled), rather then in the header
-file, but it might be tricky to get it to work with
+file, but it might be tricky to get it work with
 Arduino IDE.
 
 Use uint8_t df_page_addr_bits(), uint16_t df_page_size()
