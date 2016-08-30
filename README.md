@@ -16,8 +16,8 @@ Arduino IDE.
 
 Use uint8_t df_page_addr_bits(), uint16_t df_page_size()
 and uint8_t df_page_bits() rather then
-#define DF_PAGE_ADDR_BITS, #define DF_PAGE_SIZE and
-#define DF_PAGE_BITS in your code, when detection is
+ #define DF_PAGE_ADDR_BITS, #define DF_PAGE_SIZE and
+ #define DF_PAGE_BITS in your code, when detection is
 enabled!
 
 Sodaq Moja has an on board AT45DB161D.  An earlier
