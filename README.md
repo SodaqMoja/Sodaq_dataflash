@@ -12,7 +12,9 @@ disabled by the init() function.
 It is possible to #define the chip in your code
 (detection disabled), rather then in the header
 file, but it might be tricky to get it work with
-Arduino IDE.
+Arduino IDE. If you disable the chip-detection, you
+may want to check Sodaq_dataflash.h and verify that
+the correct variant of the AT45DB is selected.
 
 Use uint8_t df_page_addr_bits(), uint16_t df_page_size()
 and uint8_t df_page_bits() rather then
@@ -21,7 +23,4 @@ and uint8_t df_page_bits() rather then
 enabled!
 
 Sodaq Moja has an on board AT45DB161D.  An earlier
-development board Sodaq V2 has an AT45DB081D.  If
-you disable the chip-detection, you may
-want to check Sodaq_dataflash.h and verify that the
-correct variant of the AT45DB is selected.
+development board Sodaq V2 has an AT45DB081D.
