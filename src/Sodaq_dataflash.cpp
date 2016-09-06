@@ -309,13 +309,6 @@ void Sodaq_Dataflash::setPageAddr(unsigned int pageAddr)
  *    address bits (PA11 - PA0) that specify the page in the main memory to
  *    be written and 10 don’t care bits."
  */
-/*
- * From the AT45DB041D documentation
- *   "For the DataFlash standard page size (264-bytes), the opcode must be
- *   followed by three address bytes consist of four don’t care bits, 11 page
- *   address bits (PA10 - PA0) that specify the page in the main memory to
- *   be written and nine don’t care bits."
- */
 uint8_t Sodaq_Dataflash::getPageAddrByte0(uint16_t pageAddr)
 {
   // More correct would be to use a 24 bits number
