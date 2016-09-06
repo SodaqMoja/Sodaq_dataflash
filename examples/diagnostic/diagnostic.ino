@@ -23,6 +23,15 @@
  * also be used as the start of a utility to diagnose the dataflash.
  */
 
+/*
+ * Since the library now detects the chip by default, use
+ * uint8_t df_page_addr_bits(), uint16_t df_page_size() and uint8_t df_page_bits(),
+ * rather then
+ * #define DF_PAGE_ADDR_BITS, #define DF_PAGE_SIZE and #define DF_PAGE_BITS!
+ * Please substiute corresponding macros in this example, or disable
+ * detection with the init() function and #define chip!
+ */
+
 #include <Arduino.h>
 #include <SPI.h>
 #include <Sodaq_dataflash.h>
