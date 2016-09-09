@@ -48,9 +48,12 @@
 #define Buf2Write                    0x87     // Buffer 2 write                        - not used anywhere
 // *) Compatibility among all chips checked against datasheets
 
+// Note that AT45DB011D and AT45DB021D have only one buffer. These chips
+// use the commands the other chips use for buffer 1.
+
 // Command used but not defined: Chip Erase C7H, 94H, 80H, 9AH
 
-/* Other commands not used:
+/* Other commands not implemented yet:
  *   Continuous Array Read (Low Frequency) 03H
  *   Continuous Array Read 0BH
  *   Buffer 1 Read (Low Frequency) D1H
