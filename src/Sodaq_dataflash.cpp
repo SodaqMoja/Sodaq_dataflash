@@ -30,21 +30,52 @@
 #include "Sodaq_dataflash.h"
 
 //Dataflash commands
-#define FlashPageRead                0xD2     // Main memory page read
-#define StatusReg                    0xD7     // Status register
-#define ReadMfgID                    0x9F     // Read Manufacturer and Device ID
-#define PageErase                    0x81     // Page erase
-#define ReadSecReg                   0x77     // Read Security Register
+#define FlashPageRead                0xD2     // Main memory page read                 - not used anywhere
+#define StatusReg                    0xD7     // Status register *)
+#define ReadMfgID                    0x9F     // Read Manufacturer and Device ID *)
+#define PageErase                    0x81     // Page erase *)
+#define ReadSecReg                   0x77     // Read Security Register *)
 
-#define FlashToBuf1Transfer          0x53     // Main memory page to buffer 1 transfer
-#define Buf1Read                     0xD4     // Buffer 1 read
-#define Buf1ToFlashWE                0x83     // Buffer 1 to main memory page program with built-in erase
-#define Buf1Write                    0x84     // Buffer 1 write
+#define FlashToBuf1Transfer          0x53     // Main memory page to buffer 1 transfer *)
+#define Buf1Read                     0xD4     // Buffer 1 read *)
+#define Buf1ToFlashWE                0x83     // Buffer 1 to main memory page program with built-in erase *)
+#define Buf1Write                    0x84     // Buffer 1 write *)
 
-#define FlashToBuf2Transfer          0x55     // Main memory page to buffer 2 transfer
-#define Buf2Read                     0xD6     // Buffer 2 read
+#define FlashToBuf2Transfer          0x55     // Main memory page to buffer 2 transfer - not used anywhere
+#define Buf2Read                     0xD6     // Buffer 2 read                         - not used anywhere
 #define Buf2ToFlashWE                0x86     // Buffer 2 to main memory page program with built-in erase
-#define Buf2Write                    0x87     // Buffer 2 write
+                                              //                                       - not used anywhere
+#define Buf2Write                    0x87     // Buffer 2 write                        - not used anywhere
+// *) Compatibility among all chips checked against datasheets
+
+// Command used but not defined: Chip Erase C7H, 94H, 80H, 9AH
+
+/* Other commands not used:
+ *   Continuous Array Read (Low Frequency) 03H
+ *   Continuous Array Read 0BH
+ *   Buffer 1 Read (Low Frequency) D1H
+ *   Buffer 2 Read (Low Frequency) D3H
+ *   Buffer 1 to Main Memory Page Program without Built-in Erase 88H
+ *   Buffer 2 to Main Memory Page Program without Built-in Erase 89H
+ *   Block Erase 50H
+ *   Sector Erase 7CH
+ *   Main Memory Page Program Through Buffer 1 82H
+ *   Main Memory Page Program Through Buffer 2 85H
+ *   Enable Sector Protection 3DH + 2AH + 7FH + A9H
+ *   Disable Sector Protection 3DH + 2AH + 7FH + 9AH
+ *   Erase Sector Protection Register 3DH + 2AH + 7FH + CFH
+ *   Program Sector Protection Register 3DH + 2AH + 7FH + FCH
+ *   Read Sector Protection Register 32H
+ *   Sector Lockdown 3DH + 2AH + 7FH + 30H
+ *   Read Sector Lockdown Register 35H
+ *   Program Security Register 9BH + 00H + 00H + 00H
+ *   Main Memory Page to Buffer 1 Compare 60H
+ *   Main Memory Page to Buffer 2 Compare 61H
+ *   Auto Page Rewrite through Buffer 1 58H
+ *   Auto Page Rewrite through Buffer 2 59H
+ *   Deep Power-down B9H
+ *   Resume from Deep Power-down ABH
+ */
 
 //Chip identity values
 #define Manufacturer                 0x1F     // First byte from readID()
@@ -308,6 +339,18 @@ void Sodaq_Dataflash::setPageAddr(unsigned int pageAddr)
  *    followed by three address bytes consist of 2 don’t care bits, 12 page
  *    address bits (PA11 - PA0) that specify the page in the main memory to
  *    be written and 10 don’t care bits."
+ */
+/*
+ * Address fields - don't care, address bits (df_page_addr_bits), don't care:
+ *   AT45DB011D 6, 9,   9  00000011 11111110 00000000
+ *   AT45DB021D 5, 10,  9  00000111 11111110 00000000
+ *   AT45DB041D 4, 11,  9  00001111 11111110 00000000
+ *   AT45DB081D 3, 12,  9  00011111 11111110 00000000
+ *   AT45DB161D 2, 12, 10  00111111 11111100 00000000
+ *   AT45DB321D 1, 13, 10  01111111 11111100 00000000
+ *   AT45DB642D 0, 13, 11  11111111 11111000 00000000
+ *   The last don't care bits equal df_page_bits, which addresses a byte
+ *   within a page.
  */
 uint8_t Sodaq_Dataflash::getPageAddrByte0(uint16_t pageAddr)
 {
