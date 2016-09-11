@@ -30,7 +30,7 @@
 #include "Sodaq_dataflash.h"
 
 //Dataflash commands
-#define FlashPageRead                0xD2     // Main memory page read
+#define FlashPageRead                0xD2     // Main memory page read *)
 #define StatusReg                    0xD7     // Status register *)
 #define ReadMfgID                    0x9F     // Read Manufacturer and Device ID *)
 #define PageErase                    0x81     // Page erase *)
@@ -46,6 +46,9 @@
 #define Buf2ToFlashWE                0x86     // Buffer 2 to main memory page program with built-in erase
                                               //                                       - not used anywhere
 #define Buf2Write                    0x87     // Buffer 2 write                        - not used anywhere
+
+#define DeepPowerDown                0xB9     // Power mode to save current (from 25uA to 15uA) *)
+#define DeepPowerUp                  0xAB     // Power-up to idle current (from 15uA to 25uA) *)
 // *) Compatibility among all chips checked against datasheets
 
 // Note that AT45DB011D and AT45DB021D have only one buffer. These chips
@@ -76,8 +79,6 @@
  *   Main Memory Page to Buffer 2 Compare 61H
  *   Auto Page Rewrite through Buffer 1 58H
  *   Auto Page Rewrite through Buffer 2 59H
- *   Deep Power-down B9H
- *   Resume from Deep Power-down ABH
  */
 
 //Chip identity values
@@ -463,6 +464,23 @@ uint8_t Sodaq_Dataflash::df_page_bits()
     return df_page_bits_array[chip - 2];      // Lookup page bits in array
   }
   return Detection_off;
+}
+
+// Enters deep power-down mode (after 3us)
+void Sodaq_Dataflash::sleepPower()
+{
+  activate();
+  transmit(DeepPowerDown);
+  deactivate();
+}
+
+// Resumes from deep power-down mode (after 35us)
+void Sodaq_Dataflash::wakePower()
+{
+  activate();
+  transmit(DeepPowerUp);
+  deactivate();
+  delayMicroseconds(35); // "activate()" must be disabled at least 35us
 }
 
 // Use a single common instance

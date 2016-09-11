@@ -164,6 +164,9 @@ public:
   uint16_t df_page_size();
   uint8_t df_page_bits();
 
+  void sleepPower();
+  void wakePower();
+
 private:
   uint8_t readStatus();
   void waitTillReady();

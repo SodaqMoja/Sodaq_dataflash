@@ -27,18 +27,33 @@
  */
 
 /*
- * This sketch compares the added function
- * "void readStrPage(uint16_t PageAdr,uint16_t addr, uint8_t *data, size_t size)"
- * to the similar "void readPageToBuf1(uint16_t PageAdr)" and
- * "void readStrBuf1(uint16_t addr, uint8_t *data, size_t size)" functions.
- * The first function reads from the flash memory directly (leaving the buffer
- * untouched), while the two last functions do the same in two steps via the SRAM buffer 1.
+ * This sketch demonstrates the added functions "sleepPower()" and "wakePower()".
+ * Current should be redused from 25 uA (idle) to 15 uA. It will take 3 us to
+ * enter deep power-down mode and 35 us to wake up again.
+ *
+ * Seems that some older revisions of the chip had a too low deep power-down
+ * mode current. Later revisions increased it.
  */
 
 
 #include <Arduino.h>
 #include <SPI.h>
 #include <Sodaq_dataflash.h>
+
+
+void chipalive() {
+  uint8_t id[4];
+  Serial.println("Trying to read the chips identity 5 times ...");
+  for (byte i = 0; i < 5; i++) {
+    dflash.readID(id);
+    for (byte i = 0; i < 4; i++) {
+      Serial.print(i + 1);
+      Serial.print(". byte: ");
+      Serial.println(id[i], HEX);
+    }
+    Serial.println();
+  }
+}
 
 
 void setup()
@@ -69,36 +84,18 @@ void setup()
   Serial.print("Number of bits to address byte in page: "); Serial.println(dflash.df_page_bits());
   Serial.println();
 
-
-  // Method using extra step via buffer
-
-  timer = micros(); // Disable serial printing for better timing
-  dflash.readPageToBuf1(pageadr);
-  dflash.readStrBuf1(addr, data, size);
-  Serial.print("Dumping "); Serial.print(size); Serial.print(" number of bytes from page "); Serial.println(pageadr);
-  for (size_t i = 0; i < size; i++) {
-    if (data[i] <= 0xF) Serial.print("0");
-    Serial.print(data[i], HEX); Serial.print(" ");
-    if ((i + 1) % 8 == 0) Serial.println();
-  }
-  timer = micros() - timer; // Disable serial printing for better timing
-  Serial.println();
-  Serial.print("Used "); Serial.print(timer); Serial.println(" us");Serial.println();
-
-
-  // Method reading directly from flash memory
-
-  timer = micros(); // Disable serial printing for better timing
-  dflash.readStrPage(pageadr, addr, data, size);  
-  Serial.print("Dumping "); Serial.print(size); Serial.print(" number of bytes directly from page "); Serial.println(pageadr);
-  for (size_t i = 0; i < size; i++) {
-    if (data[i] <= 0xF) Serial.print("0");
-    Serial.print(data[i], HEX); Serial.print(" ");
-    if ((i + 1) % 8 == 0) Serial.println();
-  }
-  timer = micros() - timer; // Disable serial printing for better timing
-  Serial.println();
-  Serial.print("Used "); Serial.print(timer); Serial.println(" us");Serial.println();
+  // Methods to control deep power-down mode
+  Serial.println("Chip is now awake");
+  chipalive();
+  Serial.println("Going to sleep ...");
+  dflash.sleepPower();
+  // Now, the only command the chip accepts is the one to wake it up
+  chipalive();
+  // Beware that arbitrary values would be read from the SO-pin,
+  // due to the high impedance state of the output.
+  Serial.println("Wake up ...");
+  dflash.wakePower();
+  chipalive();
 }
 
 
