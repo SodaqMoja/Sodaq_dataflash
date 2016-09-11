@@ -132,6 +132,10 @@
 #endif
 #define DF_NR_PAGES     (1 << DF_PAGE_ADDR_BITS) // DF_PAGE_ADDR_BITS and DF_NR_PAGES are not used by library
 
+#define MANUFACTURER_NOT_DETECTED    0xFD     // Return value for chipdetect()
+#define FAMILY_NOT_DETECTED          0xFE     // Return value for chipdetect()
+#define DENSITY_NOT_DETECTED         0xFF     // Return value for chipdetect()
+
 class Sodaq_Dataflash
 {
 public:
@@ -149,6 +153,8 @@ public:
   void writeBuf1ToPage(uint16_t pageAddr);
   void readPageToBuf1(uint16_t PageAdr);
 
+  void readStrPage(uint16_t PageAdr,uint16_t addr, uint8_t *data, size_t size);
+
   void pageErase(uint16_t pageAddr);
   void chipErase();
 
@@ -164,10 +170,13 @@ private:
   uint8_t transmit(uint8_t data);
   void activate();
   void deactivate();
-  void setPageAddr(unsigned int PageAdr);
+  void setPageAddr(unsigned int PageAdr); // "PageAdr" typo? "pageAddr" in cpp-file.
   uint8_t getPageAddrByte0(uint16_t pageAddr);
   uint8_t getPageAddrByte1(uint16_t pageAddr);
   uint8_t getPageAddrByte2(uint16_t pageAddr);
+  void setFullAddr(uint16_t pageAddr, uint16_t addr);
+  uint8_t getFullAddrByte1(uint16_t pageAddr, uint16_t addr);
+  uint8_t getFullAddrByte2(uint16_t addr);
   uint8_t chipdetect();
 
   uint8_t _csPin;

@@ -30,7 +30,7 @@
 #include "Sodaq_dataflash.h"
 
 //Dataflash commands
-#define FlashPageRead                0xD2     // Main memory page read                 - not used anywhere
+#define FlashPageRead                0xD2     // Main memory page read
 #define StatusReg                    0xD7     // Status register *)
 #define ReadMfgID                    0x9F     // Read Manufacturer and Device ID *)
 #define PageErase                    0x81     // Page erase *)
@@ -94,9 +94,6 @@
 #define Density_64Mb                 0x08     // AT45DB642D
 #define Detection_off                0x00     // Return value for df_page_addr_bits(),
                                               // df_page_size_array() and df_page_bits_array()
-#define Manufacturer_not_detected    0xFD     // Return value for chipdetect()
-#define Family_not_detected          0xFE     // Return value for chipdetect()
-#define Density_not_detected         0xFF     // Return value for chipdetect()
 
 // Translate density to DF_PAGE_ADDR_BITS format
 // Density                                                    2    3    4    5    6    7     8
@@ -216,6 +213,22 @@ void Sodaq_Dataflash::readPageToBuf1(uint16_t pageAddr)
   setPageAddr(pageAddr);
   deactivate();
   waitTillReady();
+}
+
+// Transfers data from flash directly, shortcutting the buffer.
+void Sodaq_Dataflash::readStrPage(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size)
+{
+  activate();
+  transmit(FlashPageRead);
+  setFullAddr(pageAddr, addr);
+    transmit(0x00);             //don't care
+    transmit(0x00);
+    transmit(0x00);
+    transmit(0x00);
+    for (size_t i = 0; i < size; i++) {
+      *data++ = transmit(0x00);
+    }
+  deactivate();
 }
 
 // Reads one byte from one of the Dataflash internal SRAM buffer 1
@@ -345,15 +358,18 @@ void Sodaq_Dataflash::setPageAddr(unsigned int pageAddr)
  */
 /*
  * Address fields - don't care, address bits (df_page_addr_bits), don't care:
- *   AT45DB011D 6, 9,   9  00000011 11111110 00000000
- *   AT45DB021D 5, 10,  9  00000111 11111110 00000000
- *   AT45DB041D 4, 11,  9  00001111 11111110 00000000
- *   AT45DB081D 3, 12,  9  00011111 11111110 00000000
- *   AT45DB161D 2, 12, 10  00111111 11111100 00000000
- *   AT45DB321D 1, 13, 10  01111111 11111100 00000000
- *   AT45DB642D 0, 13, 11  11111111 11111000 00000000
- *   The last don't care bits equal df_page_bits, which addresses a byte
- *   within a page.
+ *   AT45DB011D 6, 9,   9  ------PP PPPPPPPB BBBBBBBB
+ *   AT45DB021D 5, 10,  9  -----PPP PPPPPPPB BBBBBBBB
+ *   AT45DB041D 4, 11,  9  ----PPPP PPPPPPPB BBBBBBBB
+ *   AT45DB081D 3, 12,  9  ---PPPPP PPPPPPPB BBBBBBBB
+ *   AT45DB161D 2, 12, 10  --PPPPPP PPPPPPBB BBBBBBBB
+ *   AT45DB321D 1, 13, 10  -PPPPPPP PPPPPPBB BBBBBBBB
+ *   AT45DB642D 0, 13, 11  PPPPPPPP PPPPPBBB BBBBBBBB
+ *   -: don't care
+ *   P: pageaddress
+ *   B: don't care or byteaddress
+ *   The last "B"-bits equal dfpagebits, which addresses a byte
+ *   within a page (used in setFullAddr()).
  */
 uint8_t Sodaq_Dataflash::getPageAddrByte0(uint16_t pageAddr)
 {
@@ -362,13 +378,30 @@ uint8_t Sodaq_Dataflash::getPageAddrByte0(uint16_t pageAddr)
   // as if it was already shifted by 8.
   return (pageAddr << (dfpagebits - 8)) >> 8;
 }
-uint8_t Sodaq_Dataflash::getPageAddrByte1(uint16_t page)
+uint8_t Sodaq_Dataflash::getPageAddrByte1(uint16_t page) // "page" typo? "pageAddr" above and in header file.
 {
   return page << (dfpagebits - 8);
 }
-uint8_t Sodaq_Dataflash::getPageAddrByte2(uint16_t page)
+uint8_t Sodaq_Dataflash::getPageAddrByte2(uint16_t page) // "page" typo? "pageAddr" above and in header file.
 {
   return 0;
+}
+
+void Sodaq_Dataflash::setFullAddr(uint16_t pageAddr, uint16_t addr)
+{
+  transmit(getPageAddrByte0(pageAddr));       // Works fine, since high order
+                                              // byte only includes "P"-bits
+  transmit(getFullAddrByte1(pageAddr, addr)); // Also includes "B"-bits
+  transmit(getFullAddrByte2(addr));           // Only includes "B"-bits
+}
+uint8_t Sodaq_Dataflash::getFullAddrByte1(uint16_t pageAddr, uint16_t addr)
+{
+  pageAddr = pageAddr << dfpagebits;
+  return (pageAddr | addr) >> 8; // Returns both "P"- and "B"-bits
+}
+uint8_t Sodaq_Dataflash::getFullAddrByte2(uint16_t addr)
+{
+  return addr;                   // Returns the rest of the "B"-bits
 }
 
 // Returns density of chip or error codes
@@ -393,15 +426,15 @@ uint8_t Sodaq_Dataflash::chipdetect()
         return density;
       }
       else {
-        return Density_not_detected;
+        return DENSITY_NOT_DETECTED;
       }
     }
     else {
-      return Family_not_detected;
+      return FAMILY_NOT_DETECTED;
     }
   }
   else {
-    return Manufacturer_not_detected;
+    return MANUFACTURER_NOT_DETECTED;
   }
 }
 
