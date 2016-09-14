@@ -153,7 +153,8 @@ public:
   void writeBuf1ToPage(uint16_t pageAddr);
   void readPageToBuf1(uint16_t PageAdr);
 
-  void readStrPage(uint16_t PageAdr,uint16_t addr, uint8_t *data, size_t size);
+  void readStrPage(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size);
+  void readStrCont(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size);
 
   void pageErase(uint16_t pageAddr);
   void chipErase();

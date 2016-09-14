@@ -31,6 +31,7 @@
 
 //Dataflash commands
 #define FlashPageRead                0xD2     // Main memory page read *)
+#define FlashContRead                0x0B     // Continuous Array Read *)
 #define StatusReg                    0xD7     // Status register *)
 #define ReadMfgID                    0x9F     // Read Manufacturer and Device ID *)
 #define PageErase                    0x81     // Page erase *)
@@ -58,7 +59,6 @@
 
 /* Other commands not implemented yet:
  *   Continuous Array Read (Low Frequency) 03H
- *   Continuous Array Read 0BH
  *   Buffer 1 Read (Low Frequency) D1H
  *   Buffer 2 Read (Low Frequency) D3H
  *   Buffer 1 to Main Memory Page Program without Built-in Erase 88H
@@ -216,7 +216,7 @@ void Sodaq_Dataflash::readPageToBuf1(uint16_t pageAddr)
   waitTillReady();
 }
 
-// Transfers data from flash directly, shortcutting the buffer.
+// Transfers data from flash directly and shortcutting the buffer, not crossing page-borders.
 void Sodaq_Dataflash::readStrPage(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size)
 {
   activate();
@@ -226,6 +226,19 @@ void Sodaq_Dataflash::readStrPage(uint16_t pageAddr, uint16_t addr, uint8_t *dat
     transmit(0x00);
     transmit(0x00);
     transmit(0x00);
+    for (size_t i = 0; i < size; i++) {
+      *data++ = transmit(0x00);
+    }
+  deactivate();
+}
+
+// Transfers data from flash directly and shortcutting the buffer, crossing page-borders.
+void Sodaq_Dataflash::readStrCont(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size)
+{
+  activate();
+  transmit(FlashContRead);
+  setFullAddr(pageAddr, addr);
+    transmit(0x00);             //don't care
     for (size_t i = 0; i < size; i++) {
       *data++ = transmit(0x00);
     }
