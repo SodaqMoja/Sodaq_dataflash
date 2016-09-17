@@ -41,6 +41,7 @@
 #define Buf1Read                     0xD4     // Buffer 1 read *)
 #define Buf1ToFlashWE                0x83     // Buffer 1 to main memory page program with built-in erase *)
 #define Buf1Write                    0x84     // Buffer 1 write *)
+#define Buf1ToFlashWoE               0x88     // Buffer 1 to Main Memory Page Program without Built-in Erase *)
 
 #define FlashToBuf2Transfer          0x55     // Main memory page to buffer 2 transfer - not used anywhere
 #define Buf2Read                     0xD6     // Buffer 2 read                         - not used anywhere
@@ -61,7 +62,6 @@
  *   Continuous Array Read (Low Frequency) 03H
  *   Buffer 1 Read (Low Frequency) D1H
  *   Buffer 2 Read (Low Frequency) D3H
- *   Buffer 1 to Main Memory Page Program without Built-in Erase 88H
  *   Buffer 2 to Main Memory Page Program without Built-in Erase 89H
  *   Block Erase 50H
  *   Sector Erase 7CH
@@ -308,6 +308,16 @@ void Sodaq_Dataflash::writeBuf1ToPage(uint16_t pageAddr)
 {
   activate();
   transmit(Buf1ToFlashWE);
+  setPageAddr(pageAddr);
+  deactivate();
+  waitTillReady();
+}
+
+// Transfers Dataflash SRAM buffer 1 to flash page
+void Sodaq_Dataflash::writeBuf1ToPageWoE(uint16_t pageAddr)
+{
+  activate();
+  transmit(Buf1ToFlashWoE);
   setPageAddr(pageAddr);
   deactivate();
   waitTillReady();

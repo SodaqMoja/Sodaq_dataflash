@@ -151,6 +151,7 @@ public:
   void writeStrBuf1(uint16_t addr, uint8_t *data, size_t size);
 
   void writeBuf1ToPage(uint16_t pageAddr);
+  void writeBuf1ToPageWoE(uint16_t pageAddr);
   void readPageToBuf1(uint16_t PageAdr);
 
   void readStrPage(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size);
