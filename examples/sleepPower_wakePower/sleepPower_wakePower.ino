@@ -30,9 +30,6 @@
  * This sketch demonstrates the added functions "sleepPower()" and "wakePower()".
  * Current should be redused from 25 uA (idle) to 15 uA. It will take 3 us to
  * enter deep power-down mode and 35 us to wake up again.
- *
- * Seems that some older revisions of the chip had a too low deep power-down
- * mode current. Later revisions increased it.
  */
 
 

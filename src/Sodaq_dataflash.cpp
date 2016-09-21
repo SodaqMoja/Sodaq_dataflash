@@ -35,6 +35,8 @@
 #define StatusReg                    0xD7     // Status register *)
 #define ReadMfgID                    0x9F     // Read Manufacturer and Device ID *)
 #define PageErase                    0x81     // Page erase *)
+#define BlockErase                   0x50     // Block Erase *)
+#define SectorErase                  0x7C     // Sector Erase *)
 #define ReadSecReg                   0x77     // Read Security Register *)
 
 #define FlashToBuf1Transfer          0x53     // Main memory page to buffer 1 transfer *)
@@ -58,13 +60,12 @@
 
 // Command used but not defined: Chip Erase C7H, 94H, 80H, 9AH
 
-/* Other commands not implemented yet:
+/*
+ * Other commands not implemented yet:
  *   Continuous Array Read (Low Frequency) 03H
  *   Buffer 1 Read (Low Frequency) D1H
  *   Buffer 2 Read (Low Frequency) D3H
  *   Buffer 2 to Main Memory Page Program without Built-in Erase 89H
- *   Block Erase 50H
- *   Sector Erase 7CH
  *   Main Memory Page Program Through Buffer 1 82H
  *   Main Memory Page Program Through Buffer 2 85H
  *   Enable Sector Protection 3DH + 2AH + 7FH + A9H
@@ -93,8 +94,9 @@
 #define Density_16Mb                 0x06     // AT45DB161D
 #define Density_32Mb                 0x07     // AT45DB321D
 #define Density_64Mb                 0x08     // AT45DB642D
-#define Detection_off                0x00     // Return value for df_page_addr_bits(),
-                                              // df_page_size_array() and df_page_bits_array()
+#define Detection_off                0x00     // Return value for df_page_addr_bits(), df_page_size_array(),
+                                              // df_page_bits_array(), bytesPerPage(), blocksPerSector(),
+					      // sectorsPerChip() and bytesPerChip().
 
 // Translate density to DF_PAGE_ADDR_BITS format
 // Density                                                    2    3    4    5    6    7     8
@@ -107,6 +109,14 @@ const uint16_t Sodaq_Dataflash::df_page_size_array[] =     {264, 264, 264, 264, 
 // Translate density to DF_PAGE_BITS format
 // Density                                                    2    3    4    5    6    7     8
 const uint8_t Sodaq_Dataflash::df_page_bits_array[] =      {  9,   9,   9,   9,  10,  10,   11};
+
+// Translate density to blocks per sector
+// Density                                                    2    3    4    5    6    7     8
+const uint8_t Sodaq_Dataflash::blocksPerSector_array[] =   { 16,  16,  32,  32,  32,  16,   32};
+
+// Translate density to total number of sectors
+// Density                                                    2    3    4    5    6    7     8
+const uint8_t Sodaq_Dataflash::sectorsPerChip_array[] =    {  4,   8,   8,  16,  16,  64,   32};
 
 bool Sodaq_Dataflash::willdetect = true;            // Chip detection true by default
 uint8_t Sodaq_Dataflash::dfpagebits = DF_PAGE_BITS; // Initialized for detect == false
@@ -332,8 +342,48 @@ void Sodaq_Dataflash::pageErase(uint16_t pageAddr)
   waitTillReady();
 }
 
+void Sodaq_Dataflash::blockErase(uint16_t pageAddr)
+{
+  activate();
+  transmit(BlockErase);
+  setPageAddr(pageAddr);
+  deactivate();
+  waitTillReady();
+}
+
+void Sodaq_Dataflash::sectorErase(uint16_t pageAddr)
+{
+  activate();
+  transmit(SectorErase);
+  setPageAddr(pageAddr);
+  deactivate();
+  waitTillReady();
+}
+
+/* 
+ * From AT45DB321D and AT45DB642D datasheets:
+ *
+ * Errata - Chip Erase - Issue
+ *
+ * In a certain percentage of units, the Chip Erase feature may
+ * not function correctly and may adversely affect device operation.
+ * Therefore, it is recommended that the Chip Erase commands
+ * (opcodes C7H, 94H, 80H, and 9AH) not be used.
+ *
+ * Workaround
+ * Use Block Erase (opcode 50H) as an alternative. The Block Erase
+ * function is not affected by the Chip Erase issue.
+ */
 void Sodaq_Dataflash::chipErase()
 {
+  // Apply workaround for possibly buggy chips
+  // Doesn't work if detection is disabled. Must be done manually in sketch.
+  if (willdetect == true && (chip == Density_32Mb || chip == Density_64Mb)) {
+    for (size_t i = 0; i < (uint16_t) blocksPerSector() * sectorsPerChip(); i++) {
+    blockErase(i * pagesPerBlock());  // Erase each block one by one
+    }
+  }
+  else {            // Other chips should work ok
   activate();
   transmit(0xC7);
   transmit(0x94);
@@ -341,6 +391,7 @@ void Sodaq_Dataflash::chipErase()
   transmit(0x9A);
   deactivate();
   waitTillReady();
+  }
 }
 
 void Sodaq_Dataflash::settings(SPISettings settings)
@@ -485,6 +536,72 @@ uint8_t Sodaq_Dataflash::df_page_bits()
 {
   if (willdetect == true) {
     return df_page_bits_array[chip - 2];      // Lookup page bits in array
+  }
+  return Detection_off;
+}
+
+// Returns detected chips bytes per page
+uint16_t Sodaq_Dataflash::bytesPerPage()
+{
+  return df_page_size();                      // Same as df_page_size()
+}
+
+// Returns detected chips pages per block
+uint8_t Sodaq_Dataflash::pagesPerBlock()
+{
+  return 8;                                   // 8 pages for all chips
+}
+
+// Returns detected chips blocks per sector
+uint8_t Sodaq_Dataflash::blocksPerSector()
+{
+  if (willdetect == true) {
+    return blocksPerSector_array[chip - 2];   // Lookup number of blocks in array
+  }
+  return Detection_off;
+}
+
+// Returns detected chips sectors
+uint8_t Sodaq_Dataflash::sectorsPerChip()
+{
+  if (willdetect == true) {
+    return sectorsPerChip_array[chip - 2];    // Lookup number of sectors in chip
+  }
+  return Detection_off;
+}
+
+// Returns chips total number of bytes
+uint32_t Sodaq_Dataflash::bytesPerChip()
+{
+  if (willdetect == true) {
+    return (uint32_t) df_page_size() * pagesPerBlock() * blocksPerSector() * sectorsPerChip();
+  }
+  return Detection_off;
+}
+
+// Returns blocknumber of given page address
+uint8_t Sodaq_Dataflash::pageToBlockNumber(uint16_t pageAddr)
+{
+  if (willdetect == true) {
+    return pageAddr / pagesPerBlock();
+  }
+  return Detection_off;
+}
+
+// Returns sectornumber of given page address
+uint8_t Sodaq_Dataflash::pageToSectorNumber(uint16_t pageAddr)
+{
+  if (willdetect == true) {
+    return pageAddr / ((uint16_t) blocksPerSector() * pagesPerBlock());
+  }
+  return Detection_off;
+}
+
+// Returns sectornumber of given block address
+uint8_t Sodaq_Dataflash::blockToSectorNumber(uint8_t blockNumber)
+{
+  if (willdetect == true) {
+    return blockNumber / blocksPerSector();
   }
   return Detection_off;
 }

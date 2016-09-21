@@ -158,6 +158,8 @@ public:
   void readStrCont(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size);
 
   void pageErase(uint16_t pageAddr);
+  void blockErase(uint16_t pageAddr);
+  void sectorErase(uint16_t pageAddr);
   void chipErase();
 
   void settings(SPISettings settings);
@@ -165,6 +167,14 @@ public:
   uint8_t df_page_addr_bits();
   uint16_t df_page_size();
   uint8_t df_page_bits();
+  uint16_t bytesPerPage();
+  uint8_t pagesPerBlock();
+  uint8_t blocksPerSector();
+  uint8_t sectorsPerChip();
+  uint32_t bytesPerChip();
+  uint8_t pageToBlockNumber(uint16_t pageAddr);
+  uint8_t pageToSectorNumber(uint16_t pageAddr);
+  uint8_t blockToSectorNumber(uint8_t blockNumber);
 
   void sleepPower();
   void wakePower();
@@ -194,6 +204,8 @@ private:
   static const uint8_t df_page_addr_bits_array[];
   static const uint16_t df_page_size_array[];
   static const uint8_t df_page_bits_array[];
+  static const uint8_t blocksPerSector_array[];
+  static const uint8_t sectorsPerChip_array[];
 };
 
 extern Sodaq_Dataflash dflash;
