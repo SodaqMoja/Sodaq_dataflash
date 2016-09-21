@@ -27,7 +27,7 @@
  */
 
 /*
- * This sketch demonstrates the different detection related functions.
+ * This sketch demonstrates the different erase functions.
  */
 
 
