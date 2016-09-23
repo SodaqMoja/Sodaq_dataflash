@@ -145,7 +145,7 @@ public:
   void readID(uint8_t *data);
   void readSecurityReg(uint8_t *data, size_t size);
 
-  uint8_t readByteBuf1(uint16_t pageAddr);
+  uint8_t readByteBuf1(uint16_t pageAddr);                      // Typo? pageAddr = addr in cpp-file
   void readStrBuf1(uint16_t addr, uint8_t *data, size_t size);
   void writeByteBuf1(uint16_t addr, uint8_t data);
   void writeStrBuf1(uint16_t addr, uint8_t *data, size_t size);
@@ -156,6 +156,8 @@ public:
 
   void readStrPage(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size);
   void readStrCont(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size);
+  void writeStrBuf1ThenFlashWE(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size);
+  bool buf1FlashCompare(uint16_t pageAddr);
 
   void pageErase(uint16_t pageAddr);
   void blockErase(uint16_t pageAddr);

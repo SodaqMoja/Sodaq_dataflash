@@ -86,7 +86,7 @@ void setup()
 
   // Method writing to buffer 1 - random data
   for (i = 0; i < size; i++) {
-    data[i] = random(256);                    //Pseudorandom! Pattern will repeat.
+    data[i] = random(256);                    // Pseudorandom! Pattern will repeat.
   }
   dflash.writeStrBuf1(addr, data, size);
 

@@ -44,6 +44,8 @@
 #define Buf1ToFlashWE                0x83     // Buffer 1 to main memory page program with built-in erase *)
 #define Buf1Write                    0x84     // Buffer 1 write *)
 #define Buf1ToFlashWoE               0x88     // Buffer 1 to Main Memory Page Program without Built-in Erase *)
+#define Buf1WriteThenFlashWE         0x82     // Main Memory Page Program Through Buffer 1 *)
+#define Buf1FlashComp                0x60     // Main Memory Page to Buffer 1 Compare *)
 
 #define FlashToBuf2Transfer          0x55     // Main memory page to buffer 2 transfer - not used anywhere
 #define Buf2Read                     0xD6     // Buffer 2 read                         - not used anywhere
@@ -66,7 +68,6 @@
  *   Buffer 1 Read (Low Frequency) D1H
  *   Buffer 2 Read (Low Frequency) D3H
  *   Buffer 2 to Main Memory Page Program without Built-in Erase 89H
- *   Main Memory Page Program Through Buffer 1 82H
  *   Main Memory Page Program Through Buffer 2 85H
  *   Enable Sector Protection 3DH + 2AH + 7FH + A9H
  *   Disable Sector Protection 3DH + 2AH + 7FH + 9AH
@@ -76,7 +77,6 @@
  *   Sector Lockdown 3DH + 2AH + 7FH + 30H
  *   Read Sector Lockdown Register 35H
  *   Program Security Register 9BH + 00H + 00H + 00H
- *   Main Memory Page to Buffer 1 Compare 60H
  *   Main Memory Page to Buffer 2 Compare 61H
  *   Auto Page Rewrite through Buffer 1 58H
  *   Auto Page Rewrite through Buffer 2 59H
@@ -313,7 +313,7 @@ void Sodaq_Dataflash::writeStrBuf1(uint16_t addr, uint8_t *data, size_t size)
   deactivate();
 }
 
-// Transfers Dataflash SRAM buffer 1 to flash page
+// Transfers Dataflash SRAM buffer 1 to flash page including page erase
 void Sodaq_Dataflash::writeBuf1ToPage(uint16_t pageAddr)
 {
   activate();
@@ -323,7 +323,7 @@ void Sodaq_Dataflash::writeBuf1ToPage(uint16_t pageAddr)
   waitTillReady();
 }
 
-// Transfers Dataflash SRAM buffer 1 to flash page
+// Transfers Dataflash SRAM buffer 1 to flash page without page erase
 void Sodaq_Dataflash::writeBuf1ToPageWoE(uint16_t pageAddr)
 {
   activate();
@@ -331,6 +331,31 @@ void Sodaq_Dataflash::writeBuf1ToPageWoE(uint16_t pageAddr)
   setPageAddr(pageAddr);
   deactivate();
   waitTillReady();
+}
+
+// Writes a number of bytes to buffer 1 and transfer the buffer to flash page
+// including page erase
+void Sodaq_Dataflash::writeStrBuf1ThenFlashWE(uint16_t pageAddr, uint16_t addr, uint8_t *data, size_t size)
+{
+  activate();
+  transmit(Buf1WriteThenFlashWE);
+  setFullAddr(pageAddr, addr);
+  for (size_t i = 0; i < size; i++) {
+    transmit(*data++);
+  }
+  deactivate();
+  waitTillReady();
+}
+
+// Compares buffer 1 to addressed page
+bool Sodaq_Dataflash::buf1FlashCompare(uint16_t pageAddr)
+{
+  activate();
+  transmit(Buf1FlashComp);
+  setPageAddr(pageAddr);
+  deactivate();
+  waitTillReady();
+  return !(readStatus() & 0x40);
 }
 
 void Sodaq_Dataflash::pageErase(uint16_t pageAddr)
