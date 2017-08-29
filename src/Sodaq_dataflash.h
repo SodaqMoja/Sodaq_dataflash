@@ -27,6 +27,7 @@
 #define DF_AT45DB081D   1
 #define DF_AT45DB161D   2
 #define DF_AT45DB041D   3
+#define DF_AT45DB321D   4
 
 #ifndef DF_VARIANT
 #define DF_VARIANT DF_AT45DB161D
@@ -70,6 +71,19 @@
  *   address bits (PA10 - PA0) that specify the page in the main memory to
  *   be written and nine don’t care bits."
  */
+#elif DF_VARIANT == DF_AT45DB321D
+// configuration for the Atmel AT45DB321D device
+#define DF_PAGE_ADDR_BITS       13
+#define DF_PAGE_SIZE            528
+#define DF_PAGE_BITS            10
+/*
+ * From the AT45DB321B documentation
+ *   "For the standard DataFlash page size (528 bytes), the opcode must be
+ *    followed by three address bytes consist of 1 don’t care bits, 13 page
+ *    address bits (PA12 - PA0) that specify the page in the main memory to
+ *    be written and 10 don’t care bits."
+ */
+
 
 #else
 #error "Unknown DF_VARIANT"
